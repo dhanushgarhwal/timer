@@ -1,352 +1,220 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Protocol Timer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07080b">
+<title>Timer</title>
 
 <style>
-    * {
-        box-sizing: border-box;
-        user-select: none;
-    }
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@500;600&display=swap');
 
-    html, body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-    }
-
-    body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background:
-            radial-gradient(circle at 50% 0%, #242424 0%, #111 45%, #090909 100%);
-        color: #f3f3f3;
-        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
-                     Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    .app {
-        width: min(430px, calc(100vw - 32px));
-        padding: 30px;
-        border-radius: 26px;
-
-        background: rgba(25, 25, 25, 0.82);
-        border: 1px solid rgba(255,255,255,0.09);
-
-        box-shadow:
-            0 30px 80px rgba(0,0,0,.55),
-            inset 0 1px 0 rgba(255,255,255,.04);
-
-        backdrop-filter: blur(25px);
-        -webkit-backdrop-filter: blur(25px);
-    }
-
-    .top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 42px;
-    }
-
-    .brand {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 4px;
-        color: #999;
-    }
-
-    .status {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #555;
-        transition: .25s;
-    }
-
-    .status.running {
-        background: #fff;
-        box-shadow: 0 0 12px rgba(255,255,255,.8);
-    }
-
-    .timer {
-        text-align: center;
-        font-size: 76px;
-        line-height: 1;
-        font-weight: 300;
-        letter-spacing: -4px;
-        font-variant-numeric: tabular-nums;
-        margin-bottom: 34px;
-    }
-
-    .adjust {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 28px;
-    }
-
-    button {
-        border: 0;
-        color: #ddd;
-        background: rgba(255,255,255,.055);
-        border: 1px solid rgba(255,255,255,.07);
-        cursor: pointer;
-        transition:
-            background .18s ease,
-            transform .12s ease,
-            color .18s ease;
-    }
-
-    button:hover {
-        background: rgba(255,255,255,.10);
-        color: white;
-    }
-
-    button:active {
-        transform: scale(.96);
-    }
-
-    .small {
-        width: 42px;
-        height: 34px;
-        border-radius: 10px;
-        font-size: 18px;
-    }
-
-    .main-actions {
-        display: flex;
-        gap: 10px;
-    }
-
-    .start {
-        flex: 1;
-        height: 48px;
-        border-radius: 13px;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 1px;
-        background: #f2f2f2;
-        color: #111;
-    }
-
-    .start:hover {
-        background: white;
-        color: #000;
-    }
-
-    .reset {
-        width: 92px;
-        height: 48px;
-        border-radius: 13px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-
-    .hint {
-        text-align: center;
-        margin-top: 22px;
-        color: #555;
-        font-size: 10px;
-        letter-spacing: .5px;
-    }
-
-    @media (max-width: 500px) {
-        .app {
-            padding: 25px;
-        }
-
-        .timer {
-            font-size: 64px;
-        }
-    }
+:root{
+  --bg:#07080b;
+  --text:#f5f6f8;
+  --muted:#777d87;
+  --glass:rgba(22,24,29,.76);
+  --line:rgba(255,255,255,.09);
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0}
+body{
+  display:grid;place-items:center;overflow:hidden;
+  padding:clamp(10px,3vw,32px);
+  background:
+    radial-gradient(70vw 50vw at 50% -10%,#202735 0%,transparent 62%),
+    radial-gradient(50vw 45vw at 0 100%,#111722 0%,transparent 70%),
+    radial-gradient(45vw 40vw at 100% 100%,#17131e 0%,transparent 70%),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(circle,#000 15%,transparent 85%);
+}
+.app{
+  width:min(460px,100%);
+  padding:clamp(18px,5vw,30px);
+  border:1px solid var(--line);
+  border-radius:clamp(20px,5vw,30px);
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.075),transparent 28%),
+    linear-gradient(180deg,rgba(255,255,255,.025),rgba(0,0,0,.08)),
+    var(--glass);
+  backdrop-filter:blur(32px) saturate(140%);
+  -webkit-backdrop-filter:blur(32px) saturate(140%);
+  box-shadow:
+    0 35px 90px rgba(0,0,0,.68),
+    0 10px 28px rgba(0,0,0,.38),
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.5);
+}
+.timer-shell{
+  padding:clamp(25px,7vw,36px) 8px;
+  border:1px solid rgba(255,255,255,.065);
+  border-radius:clamp(17px,4vw,23px);
+  background:
+    radial-gradient(80% 100% at 50% 0%,rgba(255,255,255,.055),transparent 68%),
+    rgba(0,0,0,.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.055),
+    inset 0 -15px 25px rgba(0,0,0,.13),
+    0 14px 30px rgba(0,0,0,.18);
+}
+.timer{
+  text-align:center;
+  font-family:"DM Mono","SFMono-Regular",Consolas,monospace;
+  font-size:clamp(50px,17vw,78px);
+  line-height:1;
+  font-weight:500;
+  letter-spacing:clamp(-4px,-1vw,-5px);
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  text-shadow:0 3px 22px rgba(0,0,0,.5),0 0 30px rgba(150,180,235,.07);
+}
+.adjust{
+  display:flex;justify-content:center;gap:9px;
+  margin:clamp(15px,4vw,20px) 0;
+}
+button{
+  appearance:none;border:0;outline:0;
+  font:600 11px/1 Inter,system-ui,sans-serif;
+  cursor:pointer;color:#dfe4ec;
+  -webkit-tap-highlight-color:transparent;
+}
+.small{
+  width:clamp(42px,11vw,46px);
+  height:clamp(34px,9vw,38px);
+  border-radius:11px;
+  border:1px solid rgba(255,255,255,.075);
+  background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.025));
+  box-shadow:0 6px 13px rgba(0,0,0,.34),
+             inset 0 1px 0 rgba(255,255,255,.09),
+             inset 0 -1px 0 rgba(0,0,0,.4);
+  font-size:20px;
+  transition:.14s ease;
+}
+.small:hover{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.035));transform:translateY(-1px)}
+.small:active{transform:translateY(2px) scale(.97)}
+.actions{display:grid;grid-template-columns:1fr clamp(82px,23vw,105px);gap:10px}
+.start,.reset{
+  height:clamp(47px,12vw,53px);
+  border-radius:14px;
+  letter-spacing:1.3px;
+  transition:.14s ease;
+}
+.start{
+  color:#090b0f;
+  background:linear-gradient(145deg,#fff 0%,#e2e7ef 48%,#b9c3d2 100%);
+  border:1px solid rgba(255,255,255,.65);
+  box-shadow:0 12px 23px rgba(0,0,0,.4),
+             inset 0 1px 0 #fff,
+             inset 0 -2px 4px rgba(73,84,103,.24);
+}
+.start:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.start:active{transform:translateY(2px);box-shadow:0 5px 10px rgba(0,0,0,.4),inset 0 2px 5px rgba(55,65,82,.22)}
+.reset{
+  color:#9da5b2;
+  border:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.025));
+  box-shadow:0 9px 18px rgba(0,0,0,.3),
+             inset 0 1px 0 rgba(255,255,255,.075),
+             inset 0 -1px 0 rgba(0,0,0,.4);
+}
+.reset:hover{color:#eef2f8;transform:translateY(-1px)}
+.reset:active{transform:translateY(2px)}
+@media(max-height:420px){
+  .app{padding:14px;max-width:430px}
+  .timer-shell{padding:18px 8px}
+  .adjust{margin:10px 0}
+  .start,.reset{height:43px}
+}
+@media(max-width:280px){
+  .app{padding:12px;border-radius:18px}
+  .timer{font-size:43px;letter-spacing:-3px}
+  .actions{gap:7px}
+}
 </style>
 </head>
-
 <body>
-
-<div class="app">
-
-    <div class="top">
-        <div class="brand">PROTOCOL</div>
-        <div class="status" id="status"></div>
-    </div>
-
+<main class="app">
+  <section class="timer-shell">
     <div class="timer" id="timer">25:00</div>
+  </section>
 
-    <div class="adjust">
-        <button class="small" id="minus">−</button>
-        <button class="small" id="plus">+</button>
-    </div>
+  <div class="adjust">
+    <button class="small" id="minus" aria-label="Decrease one minute">−</button>
+    <button class="small" id="plus" aria-label="Increase one minute">+</button>
+  </div>
 
-    <div class="main-actions">
-        <button class="start" id="start">START</button>
-        <button class="reset" id="reset">RESET</button>
-    </div>
-
-    <div class="hint">
-        SPACE · START / PAUSE &nbsp;&nbsp; R · RESET
-    </div>
-
-</div>
+  <div class="actions">
+    <button class="start" id="start">START</button>
+    <button class="reset" id="reset">RESET</button>
+  </div>
+</main>
 
 <script>
-    const DEFAULT_MINUTES = 25;
+(()=> {
+  const DEFAULT=1500;
+  let seconds=DEFAULT,running=false,tick=null;
+  const $=id=>document.getElementById(id);
+  const timer=$("timer"),start=$("start");
 
-    let totalSeconds = DEFAULT_MINUTES * 60;
-    let running = false;
-    let interval = null;
+  function draw(){
+    timer.textContent=String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0");
+    start.textContent=running?"PAUSE":"START";
+    document.title=seconds===0?"DONE":"Timer";
+  }
+  function pause(){
+    running=false;
+    clearInterval(tick);tick=null;
+    draw();
+  }
+  function play(){
+    if(running)return;
+    if(seconds<=0)seconds=DEFAULT;
+    running=true;draw();
+    tick=setInterval(()=>{
+      if(seconds>0)seconds--;
+      if(seconds===0){pause();beep();return}
+      draw();
+    },1000);
+  }
+  function toggle(){running?pause():play()}
+  function reset(){pause();seconds=DEFAULT;draw()}
+  function adjust(n){pause();seconds=Math.max(0,seconds+n*60);draw()}
 
-    const timerEl = document.getElementById("timer");
-    const startBtn = document.getElementById("start");
-    const resetBtn = document.getElementById("reset");
-    const plusBtn = document.getElementById("plus");
-    const minusBtn = document.getElementById("minus");
-    const statusEl = document.getElementById("status");
+  $("start").onclick=toggle;
+  $("reset").onclick=reset;
+  $("plus").onclick=()=>adjust(1);
+  $("minus").onclick=()=>adjust(-1);
 
-    function updateDisplay() {
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
+  addEventListener("keydown",e=>{
+    if(e.code==="Space"){e.preventDefault();toggle()}
+    else if(e.key.toLowerCase()==="r")reset();
+    else if(e.key==="ArrowUp"){e.preventDefault();adjust(1)}
+    else if(e.key==="ArrowDown"){e.preventDefault();adjust(-1)}
+    else if(e.key==="Escape")pause();
+  });
 
-        timerEl.textContent =
-            String(minutes).padStart(2, "0") +
-            ":" +
-            String(seconds).padStart(2, "0");
-    }
+  addEventListener("wheel",e=>adjust(e.deltaY<0?1:-1),{passive:true});
 
-    function updateUI() {
-        startBtn.textContent = running ? "PAUSE" : "START";
-        statusEl.classList.toggle("running", running);
-    }
-
-    function startTimer() {
-        if (running) return;
-
-        if (totalSeconds <= 0) {
-            totalSeconds = DEFAULT_MINUTES * 60;
-        }
-
-        running = true;
-        updateUI();
-
-        interval = setInterval(() => {
-            if (totalSeconds > 0) {
-                totalSeconds--;
-                updateDisplay();
-            }
-
-            if (totalSeconds <= 0) {
-                pauseTimer();
-
-                // Small completion notification
-                document.title = "DONE — Protocol Timer";
-
-                if ("Notification" in window &&
-                    Notification.permission === "granted") {
-                    new Notification("Protocol Timer", {
-                        body: "Timer complete."
-                    });
-                }
-            }
-        }, 1000);
-    }
-
-    function pauseTimer() {
-        running = false;
-
-        if (interval) {
-            clearInterval(interval);
-            interval = null;
-        }
-
-        updateUI();
-    }
-
-    function toggleTimer() {
-        if (running) {
-            pauseTimer();
-        } else {
-            startTimer();
-        }
-    }
-
-    function resetTimer() {
-        pauseTimer();
-        totalSeconds = DEFAULT_MINUTES * 60;
-        document.title = "Protocol Timer";
-        updateDisplay();
-    }
-
-    function addMinute(amount) {
-        pauseTimer();
-
-        totalSeconds += amount * 60;
-
-        if (totalSeconds < 0) {
-            totalSeconds = 0;
-        }
-
-        updateDisplay();
-    }
-
-    startBtn.addEventListener("click", toggleTimer);
-    resetBtn.addEventListener("click", resetTimer);
-
-    plusBtn.addEventListener("click", () => addMinute(1));
-    minusBtn.addEventListener("click", () => addMinute(-1));
-
-    document.addEventListener("keydown", (event) => {
-
-        // Space
-        if (event.code === "Space") {
-            event.preventDefault();
-            toggleTimer();
-        }
-
-        // R
-        if (event.key.toLowerCase() === "r") {
-            resetTimer();
-        }
-
-        // Up
-        if (event.key === "ArrowUp") {
-            addMinute(1);
-        }
-
-        // Down
-        if (event.key === "ArrowDown") {
-            addMinute(-1);
-        }
-
-        // Escape
-        if (event.key === "Escape") {
-            pauseTimer();
-        }
-    });
-
-    document.addEventListener("wheel", (event) => {
-        if (event.deltaY < 0) {
-            addMinute(1);
-        } else {
-            addMinute(-1);
-        }
-    }, { passive: true });
-
-    // Ask for notification permission after first interaction.
-    document.addEventListener("click", () => {
-        if ("Notification" in window &&
-            Notification.permission === "default") {
-            Notification.requestPermission();
-        }
-    }, { once: true });
-
-    updateDisplay();
-    updateUI();
+  function beep(){
+    try{
+      const C=AudioContext||webkitAudioContext,c=new C(),o=c.createOscillator(),g=c.createGain();
+      o.frequency.value=660;o.type="sine";g.gain.value=.0001;
+      g.gain.exponentialRampToValueAtTime(.07,c.currentTime+.02);
+      g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.4);
+      o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.4);
+    }catch(_){}
+  }
+  draw();
+})();
 </script>
-
 </body>
 </html>
-```
