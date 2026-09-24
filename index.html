@@ -1,0 +1,352 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protocol Timer</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+        user-select: none;
+    }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+    }
+
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+            radial-gradient(circle at 50% 0%, #242424 0%, #111 45%, #090909 100%);
+        color: #f3f3f3;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                     Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .app {
+        width: min(430px, calc(100vw - 32px));
+        padding: 30px;
+        border-radius: 26px;
+
+        background: rgba(25, 25, 25, 0.82);
+        border: 1px solid rgba(255,255,255,0.09);
+
+        box-shadow:
+            0 30px 80px rgba(0,0,0,.55),
+            inset 0 1px 0 rgba(255,255,255,.04);
+
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+    }
+
+    .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 42px;
+    }
+
+    .brand {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 4px;
+        color: #999;
+    }
+
+    .status {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #555;
+        transition: .25s;
+    }
+
+    .status.running {
+        background: #fff;
+        box-shadow: 0 0 12px rgba(255,255,255,.8);
+    }
+
+    .timer {
+        text-align: center;
+        font-size: 76px;
+        line-height: 1;
+        font-weight: 300;
+        letter-spacing: -4px;
+        font-variant-numeric: tabular-nums;
+        margin-bottom: 34px;
+    }
+
+    .adjust {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 28px;
+    }
+
+    button {
+        border: 0;
+        color: #ddd;
+        background: rgba(255,255,255,.055);
+        border: 1px solid rgba(255,255,255,.07);
+        cursor: pointer;
+        transition:
+            background .18s ease,
+            transform .12s ease,
+            color .18s ease;
+    }
+
+    button:hover {
+        background: rgba(255,255,255,.10);
+        color: white;
+    }
+
+    button:active {
+        transform: scale(.96);
+    }
+
+    .small {
+        width: 42px;
+        height: 34px;
+        border-radius: 10px;
+        font-size: 18px;
+    }
+
+    .main-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .start {
+        flex: 1;
+        height: 48px;
+        border-radius: 13px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        background: #f2f2f2;
+        color: #111;
+    }
+
+    .start:hover {
+        background: white;
+        color: #000;
+    }
+
+    .reset {
+        width: 92px;
+        height: 48px;
+        border-radius: 13px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .hint {
+        text-align: center;
+        margin-top: 22px;
+        color: #555;
+        font-size: 10px;
+        letter-spacing: .5px;
+    }
+
+    @media (max-width: 500px) {
+        .app {
+            padding: 25px;
+        }
+
+        .timer {
+            font-size: 64px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <div class="top">
+        <div class="brand">PROTOCOL</div>
+        <div class="status" id="status"></div>
+    </div>
+
+    <div class="timer" id="timer">25:00</div>
+
+    <div class="adjust">
+        <button class="small" id="minus">−</button>
+        <button class="small" id="plus">+</button>
+    </div>
+
+    <div class="main-actions">
+        <button class="start" id="start">START</button>
+        <button class="reset" id="reset">RESET</button>
+    </div>
+
+    <div class="hint">
+        SPACE · START / PAUSE &nbsp;&nbsp; R · RESET
+    </div>
+
+</div>
+
+<script>
+    const DEFAULT_MINUTES = 25;
+
+    let totalSeconds = DEFAULT_MINUTES * 60;
+    let running = false;
+    let interval = null;
+
+    const timerEl = document.getElementById("timer");
+    const startBtn = document.getElementById("start");
+    const resetBtn = document.getElementById("reset");
+    const plusBtn = document.getElementById("plus");
+    const minusBtn = document.getElementById("minus");
+    const statusEl = document.getElementById("status");
+
+    function updateDisplay() {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        timerEl.textContent =
+            String(minutes).padStart(2, "0") +
+            ":" +
+            String(seconds).padStart(2, "0");
+    }
+
+    function updateUI() {
+        startBtn.textContent = running ? "PAUSE" : "START";
+        statusEl.classList.toggle("running", running);
+    }
+
+    function startTimer() {
+        if (running) return;
+
+        if (totalSeconds <= 0) {
+            totalSeconds = DEFAULT_MINUTES * 60;
+        }
+
+        running = true;
+        updateUI();
+
+        interval = setInterval(() => {
+            if (totalSeconds > 0) {
+                totalSeconds--;
+                updateDisplay();
+            }
+
+            if (totalSeconds <= 0) {
+                pauseTimer();
+
+                // Small completion notification
+                document.title = "DONE — Protocol Timer";
+
+                if ("Notification" in window &&
+                    Notification.permission === "granted") {
+                    new Notification("Protocol Timer", {
+                        body: "Timer complete."
+                    });
+                }
+            }
+        }, 1000);
+    }
+
+    function pauseTimer() {
+        running = false;
+
+        if (interval) {
+            clearInterval(interval);
+            interval = null;
+        }
+
+        updateUI();
+    }
+
+    function toggleTimer() {
+        if (running) {
+            pauseTimer();
+        } else {
+            startTimer();
+        }
+    }
+
+    function resetTimer() {
+        pauseTimer();
+        totalSeconds = DEFAULT_MINUTES * 60;
+        document.title = "Protocol Timer";
+        updateDisplay();
+    }
+
+    function addMinute(amount) {
+        pauseTimer();
+
+        totalSeconds += amount * 60;
+
+        if (totalSeconds < 0) {
+            totalSeconds = 0;
+        }
+
+        updateDisplay();
+    }
+
+    startBtn.addEventListener("click", toggleTimer);
+    resetBtn.addEventListener("click", resetTimer);
+
+    plusBtn.addEventListener("click", () => addMinute(1));
+    minusBtn.addEventListener("click", () => addMinute(-1));
+
+    document.addEventListener("keydown", (event) => {
+
+        // Space
+        if (event.code === "Space") {
+            event.preventDefault();
+            toggleTimer();
+        }
+
+        // R
+        if (event.key.toLowerCase() === "r") {
+            resetTimer();
+        }
+
+        // Up
+        if (event.key === "ArrowUp") {
+            addMinute(1);
+        }
+
+        // Down
+        if (event.key === "ArrowDown") {
+            addMinute(-1);
+        }
+
+        // Escape
+        if (event.key === "Escape") {
+            pauseTimer();
+        }
+    });
+
+    document.addEventListener("wheel", (event) => {
+        if (event.deltaY < 0) {
+            addMinute(1);
+        } else {
+            addMinute(-1);
+        }
+    }, { passive: true });
+
+    // Ask for notification permission after first interaction.
+    document.addEventListener("click", () => {
+        if ("Notification" in window &&
+            Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }, { once: true });
+
+    updateDisplay();
+    updateUI();
+</script>
+
+</body>
+</html>
+```
