@@ -160,90 +160,208 @@ button{
 </main>
 
 <script>
-(()=> {
-  const DEFAULT=1500;
-  let seconds=DEFAULT,running=false,tick=null;
-  const $=id=>document.getElementById(id);
-  const timer=$("timer"),start=$("start");
+(() => {
+  "use strict";
 
-  function draw(){
-    timer.textContent=String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0");
-    start.textContent=running?"PAUSE":"START";
-    document.title=seconds===0?"DONE":"Timer";
+  const timerDisplay = document.querySelector("#timer");
+  const startBtn = document.querySelector("#startBtn");
+  const resetBtn = document.querySelector("#resetBtn");
+  const minusBtn = document.querySelector("#minusBtn");
+  const plusBtn = document.querySelector("#plusBtn");
+
+  let totalSeconds = 25 * 60;
+  let remainingSeconds = totalSeconds;
+  let running = false;
+  let intervalId = null;
+
+  let audioCtx = null;
+  let alarmInterval = null;
+  let alarmRinging = false;
+
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
   }
-  function pause(){
-    running=false;
-    clearInterval(tick);tick=null;
-    draw();
+
+  function render() {
+    if (timerDisplay) {
+      timerDisplay.textContent = formatTime(remainingSeconds);
+    }
+
+    if (startBtn) {
+      startBtn.textContent = running ? "PAUSE" : "START";
+    }
   }
-  function play(){
-    if(running)return;
-    if(seconds<=0)seconds=DEFAULT;
-    running=true;draw();
-    tick=setInterval(()=>{
-      if(seconds>0)seconds--;
-      if(seconds===0){pause();beep();return}
-      draw();
-    },1000);
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      audioCtx = new AudioContextClass();
+    }
+
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+
+    return audioCtx;
   }
-  function toggle(){running?pause():play()}
-  function reset(){pause();seconds=DEFAULT;draw()}
-  function adjust(n){pause();seconds=Math.max(0,seconds+n*60);draw()}
-
-  $("start").onclick=toggle;
-  $("reset").onclick=reset;
-  $("plus").onclick=()=>adjust(1);
-  $("minus").onclick=()=>adjust(-1);
-
-  addEventListener("keydown",e=>{
-    if(e.code==="Space"){e.preventDefault();toggle()}
-    else if(e.key.toLowerCase()==="r")reset();
-    else if(e.key==="ArrowUp"){e.preventDefault();adjust(1)}
-    else if(e.key==="ArrowDown"){e.preventDefault();adjust(-1)}
-    else if(e.key==="Escape")pause();
-  });
-
-  addEventListener("wheel",e=>adjust(e.deltaY<0?1:-1),{passive:true});
 
   function beep() {
-  try {
-    audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === "suspended") audioCtx.resume();
+    const ctx = ensureAudio();
+    if (!ctx) return;
 
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    const now = ctx.currentTime;
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
 
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(880, now);
-    osc.frequency.exponentialRampToValueAtTime(660, now + 0.18);
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, now);
+    oscillator.frequency.exponentialRampToValueAtTime(660, now + 0.18);
 
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.exponentialRampToValueAtTime(0.16, now + 0.015);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
 
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(now);
-    osc.stop(now + 0.25);
-  } catch (_) {}
-}
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
 
-function stopAlarm() {
-  alarmRinging = false;
-  if (alarmInterval) {
-    clearInterval(alarmInterval);
-    alarmInterval = null;
+    oscillator.start(now);
+    oscillator.stop(now + 0.25);
   }
-}
 
-function startAlarm() {
-  stopAlarm();
-  alarmRinging = true;
-  beep();
-  alarmInterval = setInterval(() => {
-    if (alarmRinging) beep();
-  }, 700);
+  function stopAlarm() {
+    alarmRinging = false;
+
+    if (alarmInterval !== null) {
+      clearInterval(alarmInterval);
+      alarmInterval = null;
+    }
+  }
+
+  function startAlarm() {
+    stopAlarm();
+    alarmRinging = true;
+
+    beep();
+    alarmInterval = setInterval(() => {
+      if (alarmRinging) beep();
+    }, 700);
+  }
+
+  function stopTimer() {
+    running = false;
+
+    if (intervalId !== null) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+
+    render();
+  }
+
+  function startTimer() {
+    if (remainingSeconds <= 0) {
+      remainingSeconds = totalSeconds;
+    }
+
+    stopAlarm();
+    running = true;
+    render();
+
+    if (intervalId !== null) {
+      clearInterval(intervalId);
+    }
+
+    intervalId = setInterval(() => {
+      if (!running) return;
+
+      remainingSeconds -= 1;
+
+      if (remainingSeconds <= 0) {
+        remainingSeconds = 0;
+        stopTimer();
+        startAlarm();
+        return;
+      }
+
+      render();
+    }, 1000);
+  }
+
+  function toggleTimer() {
+    if (running) {
+      stopTimer();
+    } else {
+      startTimer();
+    }
+  }
+
+  function resetTimer() {
+    stopAlarm();
+    stopTimer();
+    remainingSeconds = totalSeconds;
+    render();
+  }
+
+  function adjustMinutes(delta) {
+    stopAlarm();
+
+    const next = Math.max(0, remainingSeconds + delta * 60);
+    remainingSeconds = next;
+
+    if (!running) {
+      totalSeconds = Math.max(0, next);
+    }
+
+    render();
+  }
+
+  if (startBtn) {
+    startBtn.addEventListener("click", toggleTimer);
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", resetTimer);
+  }
+
+  if (minusBtn) {
+    minusBtn.addEventListener("click", () => adjustMinutes(-1));
+  }
+
+  if (plusBtn) {
+    plusBtn.addEventListener("click", () => adjustMinutes(1));
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.code === "Space") {
+      event.preventDefault();
+      stopAlarm();
+      toggleTimer();
+    } else if (event.key.toLowerCase() === "r") {
+      event.preventDefault();
+      resetTimer();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      adjustMinutes(1);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      adjustMinutes(-1);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      stopAlarm();
+      stopTimer();
+    }
+  });
+
+  document.addEventListener("wheel", (event) => {
+    if (event.deltaY === 0) return;
+
+    adjustMinutes(event.deltaY < 0 ? 1 : -1);
+  }, { passive: true });
+
+  render();
 })();
 </script>
 </body>
